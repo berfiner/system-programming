@@ -21,6 +21,8 @@ void AddNewDataNode(char* input);
 void PrintStack(struct node *);
 void SplitBufferToArray(char *buffer, char * delim, char ** Output);
 void undochmod(struct node * stackhead,int id);
+void undotouch(struct node * stackhead,int id);
+void undorm(struct node * stackhead,int id);
 int main(int argv, char* argc[]) {
     //input : $HISTFILE
     char** lines = NULL;
@@ -51,10 +53,11 @@ int main(int argv, char* argc[]) {
     }
      int id;
      PrintStack(head);
+    printf("Please enter the id of command you want to revoke: ");
     scanf("%d",&id);
     
    
-
+    undotouch(head,id);
     undomkdir(head,id);
     undormdir(head,id);
    undomv(head,id);
@@ -93,6 +96,14 @@ char* substring(const char* str)
       }
       if(strstr(newnode->command_name,"rmdir")!=NULL){
           newnode->undo_command_name="mkdir";
+          newnode->input_files=substring(newnode->command_name);
+          gid=gid+1;
+          newnode->id=gid;
+           
+      }
+
+      if(strstr(newnode->command_name,"touch")!=NULL){
+          newnode->undo_command_name="rm";
           newnode->input_files=substring(newnode->command_name);
           gid=gid+1;
           newnode->id=gid;
@@ -254,10 +265,22 @@ void undormdir(struct node * stackhead,int id){
         cur=cur->next;
     }
     
-    
 }
 
+void undotouch(struct node * stackhead,int id){
+    struct node *cur=stackhead;
+    char command[500];
 
+    while(cur!=NULL){
+        if (cur->undo_command_name!=NULL  && cur->id==id) {
+            sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
+            //printf("%s",command);
+            system(command);
+        }
+        cur=cur->next;
+    }
+    
+}
 void SplitBufferToArray(char *buffer, char * delim, char ** Output) {
 
     int partcount = 0;
@@ -356,7 +379,7 @@ void undomv(struct node * stackhead,int id){
         }
         cur=cur->next;
     }
-    
+
 }
 
 void PrintStack(struct node * stackhead){
