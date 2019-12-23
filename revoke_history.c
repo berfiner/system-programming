@@ -5,20 +5,22 @@
 #include <sys/types.h>
 #include <ctype.h>
 struct node {
+    int  id;
     char * command_name;
     char * undo_command_name;
     char * input_files;
     struct node * next;
 
 };
-
+int gid=0;
 struct node * head=NULL;
-void undomkdir(struct node * stackhead);
-void undomv(struct node * stackhead);
+void undomkdir(struct node * stackhead,int id);
+void undormdir(struct node * stackhead,int id);
+void undomv(struct node * stackhead,int id);
 void AddNewDataNode(char* input);
 void PrintStack(struct node *);
 void SplitBufferToArray(char *buffer, char * delim, char ** Output);
-void undochmod(struct node * stackhead);
+void undochmod(struct node * stackhead,int id);
 int main(int argv, char* argc[]) {
     //input : $HISTFILE
     char** lines = NULL;
@@ -27,7 +29,8 @@ int main(int argv, char* argc[]) {
     ssize_t read;
 
     FILE* hist = fopen(argc[1],"r");
-     if(hist == NULL) {
+
+    if(hist == NULL) {
        return 1;
      }
     /*
@@ -46,10 +49,16 @@ int main(int argv, char* argc[]) {
       fgets(lines[i], 1000, hist); // read up to 999 characters and terminate string
         AddNewDataNode(lines[i]);
     }
-   // PrintStack(head);
-    //undomkdir(head);
-    undomv(head);
-    //undochmod(head);
+     int id;
+     PrintStack(head);
+    scanf("%d",&id);
+    
+   
+
+    undomkdir(head,id);
+    undormdir(head,id);
+   undomv(head,id);
+    undochmod(head,id);
      fclose(hist);
 
 
@@ -70,24 +79,36 @@ char* substring(const char* str)
       newnode = malloc (sizeof (struct node));
       newnode->undo_command_name=NULL;
       newnode->input_files=NULL;
+      newnode->id=0;
       newnode->command_name=input;
       newnode->next=NULL;
-      char *inputs=NULL;
-
+      
+    
       if(strstr(newnode->command_name,"mkdir")!=NULL){
           newnode->undo_command_name="rmdir";
           newnode->input_files=substring(newnode->command_name);
-          
+          gid=gid+1;
+          newnode->id=gid;
+           
+      }
+      if(strstr(newnode->command_name,"rmdir")!=NULL){
+          newnode->undo_command_name="mkdir";
+          newnode->input_files=substring(newnode->command_name);
+          gid=gid+1;
+          newnode->id=gid;
+           
       }
       if(strstr(newnode->command_name,"mv")!=NULL){
           newnode->undo_command_name="mv";
           newnode->input_files=substring(newnode->command_name);
-         
+           gid=gid+1;
+           newnode->id=gid;
       }
       if(strstr(newnode->command_name,"chmod")!=NULL){
           newnode->undo_command_name="chmod";
           newnode->input_files=substring(newnode->command_name);
-
+           gid=gid+1;
+           newnode->id=gid;
       }
       
 
@@ -96,6 +117,7 @@ char* substring(const char* str)
           newnode->next=head;
           head=newnode;
       }
+   
       
   }
 
@@ -130,26 +152,25 @@ void replaceLast(char * str, char oldChar, char newChar)
     }
 }
 
-void undochmod(struct node * stackhead){
+void undochmod(struct node * stackhead,int id){
     struct node *cur=stackhead;
     char command[200];
-
     while(cur!=NULL){
         
-        if(strstr(cur->command_name,"chmod")!=NULL){
+        if(strstr(cur->command_name,"chmod")!=NULL && cur->id==id){
             if(strchr(cur->input_files,',')==NULL){
                 if(strchr(cur->input_files,'+')!=NULL){
                     char *a=strchr(cur->input_files,'+');
                     sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
                     char *b=replace_char(command,'+','-');
-                    printf("%s",command);
+                    //printf("%s",command);
                     system(command);
                 }
                 if(strchr(cur->input_files,'-')!=NULL){
                     char *c=strchr(cur->input_files,'-');
                     sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
                     char *d=replace_char(command,'-','+');
-                    printf("%s",command);
+                    //printf("%s",command);
                     system(command);
                 }
             }
@@ -204,43 +225,38 @@ void undochmod(struct node * stackhead){
     
 }
 
-void undomkdir(struct node * stackhead){
+void undomkdir(struct node * stackhead,int id){
     struct node *cur=stackhead;
-    char command[50];
+    char command[500];
 
     while(cur!=NULL){
-        if (cur->undo_command_name!=NULL) {
+        if (cur->undo_command_name!=NULL  && cur->id==id) {
             sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
-            printf("%s",command);
+            //printf("%s",command);
             system(command);
         }
         cur=cur->next;
     }
     
-}
-void split(char * str,char ** a){
-    char * pch;
-    pch = strtok (str," ");
-    int i=0;
-    while (pch != NULL)
-    {
-        a[i]=pch;
-        pch = strtok (NULL, " ");
-        i=i+1;
-    }
     
 }
 
-void copy_string(char *target, char *source)
-{
-   while(*source)
-   {
-      *target = *source;
-      source++;
-      target++;
-   }
-   *target = '\0';
+void undormdir(struct node * stackhead,int id){
+    struct node *cur=stackhead;
+    char command[500];
+
+    while(cur!=NULL){
+        if (cur->undo_command_name!=NULL  && cur->id==id) {
+            sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
+            //printf("%s",command);
+            system(command);
+        }
+        cur=cur->next;
+    }
+    
+    
 }
+
 
 void SplitBufferToArray(char *buffer, char * delim, char ** Output) {
 
@@ -262,64 +278,80 @@ void SplitBufferToArray(char *buffer, char * delim, char ** Output) {
  
 }
 
-void undomv(struct node * stackhead){
+
+void undomv(struct node * stackhead,int id){
     struct node *cur=stackhead;
-    char command[200];
+    char command[500];
 
     char p[10][10];
-    while(cur!=NULL){
-        if(strstr(cur->command_name,"mv")!=NULL){
+    while(cur!=NULL ){
+        if(strstr(cur->command_name,"mv")!=NULL && cur->id==id){
             
             if (cur->undo_command_name!=NULL) {
-                char **strn=(char **) malloc(50*sizeof(char *));
+                char **strn=(char **) malloc(150*sizeof(char *));
+                //printf("input %s\n",cur->input_files);
                 SplitBufferToArray(cur->input_files," ",strn);
-                strn[2][strlen(strn[2])-1]='\0';
-                char *d=(char *) malloc(100);
-                strcpy(d,strn[2]);
+               // strn[2][strlen(strn[2])-1]='\0';
+                char *dest=(char *) malloc(500);
+                 char **source=(char **) malloc(150*sizeof(char *));
+                char temp[500][500];
+                char **b=(char **) malloc(150*sizeof(char *));
+               char newdest[550][550];
+                int i=0;
+                while(strn[i]!=NULL){
+                        strn[i++];
+                }
                 
-                char * b=strrchr(strn[1],'/');
-
-                char *c=(char *) malloc(100);
-                strncpy(c,strn[1],b-strn[1]);
-
-                sprintf(command," %s %s%s %s",cur->undo_command_name,d,b,c);
-                printf("%s %s %s \n",d,b,c);
-
-               
-       /*
-                split(cur->input_files,strn);
-                
-                strn[1][strlen(strn[1])-1]='\0';
-                
-                char a[100];
-                char d[100];
-                copy_string(a,strn[0]);
-                 
-                      copy_string(d,strn[1]);
-                      char * b=strrchr(a,'/');
-                      printf("%s",b);
-                      char *c=(char *) malloc(100);
-                      strncpy(c,a,b-a);
-                 
-                      sprintf(command,"%s %s%s %s ",cur->undo_command_name,d,b,c);
-                free(c);
-                free(strn);
-    
+                 //printf("dest %s\n",strn[i-2]);
+                 strcpy(dest,strn[i-2]);
               
-                        
-            */
+                strn[i-2]=NULL;
+                int j=0;
+                while(strn[j]!=NULL){
 
-  
-/*
-                  else{
-                sprintf(command,"%s %s/%s . ",cur->undo_command_name,strn[1],strn[0]);
-                  }
-*/
-                              
-              // printf("%s",command);
-                system(command);
+                        b[j]=strrchr(strn[j++],'/');
+
+                               }
 
                 
+                int k=0;
+                       while(b[j]!=NULL){
+                           
+                           source[k]=b[j--];
+                           strcpy(temp[k],source[k]);
+                           k=k+1;
+                                          }
+               
+
+                         int a=1;
+                             // printf("dd %s",strn[2]);
+                              int kn=k-1;
+                              
+                                 
+                              
+                                 while(strn[a]!=NULL && source[kn]!=NULL){
+
+                                      strn[a][strlen(strn[a])-strlen(source[kn])]='\0';
+                                      strcpy(newdest[kn],strn[a]);
+                                     //printf("new dest %s\n",newdest[a-1]);
+                                      a=a+1;
+                                       kn--;
+                                  }
+
+          
+                               dest[strlen(dest)]='\0';
+                 
+                
+                for(int r=0;r<k;r++){
+                    sprintf(command,"%s %s%s %s\n",cur->undo_command_name,dest,temp[r],newdest[r]);
+                    printf("command %s",command);
+                    system(command);
+                 
+                }
+                
+                            
+           
+
         }
         }
         cur=cur->next;
@@ -329,11 +361,10 @@ void undomv(struct node * stackhead){
 
 void PrintStack(struct node * stackhead){
     struct node *cur=stackhead;
-    int i=0;
-    while(cur!=NULL){
-        printf("%s",cur->command_name);
+    while(cur!=NULL ){
+        if(cur->id !=0)
+            printf("%d %s ",cur->id, cur->command_name);
         cur=cur->next;
-        i=i+1;
     }
 }
 
