@@ -1,18 +1,24 @@
 export HISTTIMEFORMAT='%Y-%m-%d '
 
-b=`cat history > history_output.txt`
+b=`history > history_output.txt`
 
-if [ $2 = "today" ];then
+if [ "$1" = "today" ];then
+newdate=$(date -v-0d +%F)
+
+fi
+if [ "$2" = "day" ];then
 newdate=$(date -v-$1d +%F)
 
 fi
-if [ $2 = "day" ];then
-newdate=$(date -v-$1d +%F)
-
-fi
-if [ $2 = "week" ]
+if [ "$2" = "week" ]
 then
 newdate=$(date -v-$1w +%F )
+
+
+fi
+if [ "$2" = "month" ]
+then
+newdate=$(date -v-$1m +%F )
 
 
 fi
