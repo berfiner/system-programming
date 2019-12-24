@@ -1,9 +1,16 @@
+/*takes ./bash_history as input
+prints reversible commands
+reverses the chosen command
+ */
+
+
 #include<string.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
 #include <sys/types.h>
 #include <ctype.h>
+
 struct node {
     int  id;
     char * command_name;
@@ -22,7 +29,7 @@ void PrintStack(struct node *);
 void SplitBufferToArray(char *buffer, char * delim, char ** Output);
 void undochmod(struct node * stackhead,int id);
 void undotouch(struct node * stackhead,int id);
-void undorm(struct node * stackhead,int id);
+int findfileSize(char f_n[]);
 int main(int argv, char* argc[]) {
     //input : $HISTFILE
     char** lines = NULL;
@@ -31,28 +38,23 @@ int main(int argv, char* argc[]) {
     ssize_t read;
 
     FILE* hist = fopen(argc[1],"r");
-
+ 
     if(hist == NULL) {
        return 1;
      }
-    /*
-       while ((read = getline(&line, &len, hist)) != -1) {
-           AddNewDataNode(line);
-      }
-    */
 
-    lines = malloc(929 * sizeof(char*));
+    lines = malloc(1400 * sizeof(char*));
     int i;
 
-    for (i=0; i < 929; i++)
+    for (i=0; i < 1500; i++)
     {
-      lines[i] = malloc(1000);
+      lines[i] = malloc(1500);
       //lines[i][0] = '\0'; // terminate for the case that last line does not contain characters
-      fgets(lines[i], 1000, hist); // read up to 999 characters and terminate string
+      fgets(lines[i], 1500, hist); // read up to 999 characters and terminate string
         AddNewDataNode(lines[i]);
     }
      int id;
-     PrintStack(head);
+    PrintStack(head);
     printf("Please enter the id of command you want to revoke: ");
     scanf("%d",&id);
     
@@ -243,11 +245,12 @@ void undomkdir(struct node * stackhead,int id){
     while(cur!=NULL){
         if (cur->undo_command_name!=NULL  && cur->id==id) {
             sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
-            //printf("%s",command);
             system(command);
+            
         }
         cur=cur->next;
     }
+    
     
     
 }
@@ -259,7 +262,6 @@ void undormdir(struct node * stackhead,int id){
     while(cur!=NULL){
         if (cur->undo_command_name!=NULL  && cur->id==id) {
             sprintf(command,"%s%s",cur->undo_command_name,cur->input_files);
-            //printf("%s",command);
             system(command);
         }
         cur=cur->next;
@@ -277,6 +279,7 @@ void undotouch(struct node * stackhead,int id){
             //printf("%s",command);
             system(command);
         }
+        
         cur=cur->next;
     }
     
@@ -312,9 +315,7 @@ void undomv(struct node * stackhead,int id){
             
             if (cur->undo_command_name!=NULL) {
                 char **strn=(char **) malloc(150*sizeof(char *));
-                //printf("input %s\n",cur->input_files);
                 SplitBufferToArray(cur->input_files," ",strn);
-               // strn[2][strlen(strn[2])-1]='\0';
                 char *dest=(char *) malloc(500);
                  char **source=(char **) malloc(150*sizeof(char *));
                 char temp[500][500];
@@ -325,7 +326,7 @@ void undomv(struct node * stackhead,int id){
                         strn[i++];
                 }
                 
-                 //printf("dest %s\n",strn[i-2]);
+
                  strcpy(dest,strn[i-2]);
               
                 strn[i-2]=NULL;
@@ -347,7 +348,7 @@ void undomv(struct node * stackhead,int id){
                
 
                          int a=1;
-                             // printf("dd %s",strn[2]);
+
                               int kn=k-1;
                               
                                  
@@ -356,7 +357,7 @@ void undomv(struct node * stackhead,int id){
 
                                       strn[a][strlen(strn[a])-strlen(source[kn])]='\0';
                                       strcpy(newdest[kn],strn[a]);
-                                     //printf("new dest %s\n",newdest[a-1]);
+
                                       a=a+1;
                                        kn--;
                                   }
